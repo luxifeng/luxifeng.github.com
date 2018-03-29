@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="description" content="Spark | 源码研读 - Windows下的阅读环境搭建"/>
+
+
+
+
+  <meta name="keywords" content="Spark," />
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Lucy">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1" />
+
+
+
+<link rel="canonical" href="http://luxifeng.github.io/2018/03/30/Spark-源码研读-Windows下的阅读环境搭建/"/>
+
+
+<meta name="description" content="尽管在Linux下面编译Spark会更为方便，但是因为自己的机子上只安装了Windows以及懒得搭建虚拟机，因此索性尝试在Windows下面搭建Spark源码阅读环境，仅注意编译环境，其他无甚差别。 配置 os: Windows 10  java version: 1.8.0_144  spark version: 2.3.0  git version: 2.16.1.windows.1  mav">
+<meta name="keywords" content="Spark">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Spark | 源码研读 - Windows下的阅读环境搭建">
+<meta property="og:url" content="http://luxifeng.github.io/2018/03/30/Spark-源码研读-Windows下的阅读环境搭建/index.html">
+<meta property="og:site_name" content="Lucy">
+<meta property="og:description" content="尽管在Linux下面编译Spark会更为方便，但是因为自己的机子上只安装了Windows以及懒得搭建虚拟机，因此索性尝试在Windows下面搭建Spark源码阅读环境，仅注意编译环境，其他无甚差别。 配置 os: Windows 10  java version: 1.8.0_144  spark version: 2.3.0  git version: 2.16.1.windows.1  mav">
+<meta property="og:image" content="http://wx4.sinaimg.cn/large/00601JUTgy1fpu6rws3mwj30xd0qe41h.jpg">
+<meta property="og:image" content="http://wx4.sinaimg.cn/mw690/00601JUTgy1fpu6s05kzjj30s80k076a.jpg">
+<meta property="og:updated_time" content="2018-03-29T17:17:36.876Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Spark | 源码研读 - Windows下的阅读环境搭建">
+<meta name="twitter:description" content="尽管在Linux下面编译Spark会更为方便，但是因为自己的机子上只安装了Windows以及懒得搭建虚拟机，因此索性尝试在Windows下面搭建Spark源码阅读环境，仅注意编译环境，其他无甚差别。 配置 os: Windows 10  java version: 1.8.0_144  spark version: 2.3.0  git version: 2.16.1.windows.1  mav">
+<meta name="twitter:image" content="http://wx4.sinaimg.cn/large/00601JUTgy1fpu6rws3mwj30xd0qe41h.jpg">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1" />
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+    <title> Spark | 源码研读 - Windows下的阅读环境搭建 - Lucy </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">Lucy</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Spark | 源码研读 - Windows下的阅读环境搭建
+        
+      </h1>
+
+      <time class="post-time">
+          Mar 30 2018
+      </time>
+    </header>
+
+
+
+    
+            <div class="post-content">
+            <p>尽管在Linux下面编译Spark会更为方便，但是因为自己的机子上只安装了Windows以及懒得搭建虚拟机，因此索性尝试在Windows下面搭建Spark源码阅读环境，仅注意编译环境，其他无甚差别。</p>
+<h3 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h3><ul>
+<li><p>os: Windows 10</p>
+</li>
+<li><p>java version: 1.8.0_144</p>
+</li>
+<li><p>spark version: 2.3.0</p>
+</li>
+<li><p>git version: 2.16.1.windows.1</p>
+</li>
+<li><p>maven version: Apache Maven 3.5.3</p>
+</li>
+<li><p>intellij idea version: 2017.3.5 社区版</p>
+</li>
+</ul>
+<h3 id="下载及编译"><a href="#下载及编译" class="headerlink" title="下载及编译"></a>下载及编译</h3><ol>
+<li><p>下载Spark源码</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ git <span class="built_in">clone</span> git://github.com/apache/spark.git</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>编译Spark的原因</p>
+<p> 为何阅读源码前要编译Spark？网上的解释是</p>
+<blockquote>
+<p>在将 Spark 工程导入 IDEA 之前，最好先 build 一遍 Spark，至少完成编译步骤。这是因为编译过程中还会自动生成一些源码。尤其是 Spark 2.0 中 SQL parser 改用 ANTLR 实现。如果不经编译直接将工程导入 IDEA，parser 相关的 class 会出现引用缺失。</p>
+</blockquote>
+<p> 编译Spark的步骤跟着<a href="http://spark.apache.org/docs/latest/building-spark.html" target="_blank" rel="noopener">官方文档</a>走即可，但在Windows环境下必须注意Linux Shell的执行问题，直接在Dos环境下执行编译会报错，使用Git客户端自带的工具MINGW64可行。</p>
+</li>
+<li><p>Dos下编译Spark（失败！！！）</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">D:\workspace&gt;<span class="built_in">cd</span> spark</span><br><span class="line">D:\workspace\spark&gt;<span class="built_in">set</span> MAVEN_OPTS=-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m</span><br><span class="line">D:\workspace\spark&gt;mvn -DskipTests clean package</span><br></pre></td></tr></table></figure>
+<p> 期间下载各种jar包，等待等待~但是最后报错！！！</p>
+<p> <em>Execute failed: java.io.IOException: Cannot run program “bash”</em></p>
+<p> <img src="http://wx4.sinaimg.cn/large/00601JUTgy1fpu6rws3mwj30xd0qe41h.jpg" alt="编译失败"></p>
+<p> 就是说不能执行bash文件咯！恰好Git客户端自带了一个工具，可以执行Linux Shell命令，换Git Bash来！</p>
+</li>
+<li><p>Git Bash下编译Spark（成功！！！）</p>
+ <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Lucy@LAPTOP-V66I9EH4 MINGW64 /d/workspace/spark (master)</span><br><span class="line">$ <span class="built_in">export</span> MAVEN_OPTS=<span class="string">"-Xmx2g -XX:ReservedCodeCacheSize=512m"</span></span><br><span class="line"></span><br><span class="line">Lucy@LAPTOP-V66I9EH4 MINGW64 /d/workspace/spark (master)</span><br><span class="line">$ mvn -DskipTests clean package</span><br></pre></td></tr></table></figure>
+<p> <img src="http://wx4.sinaimg.cn/mw690/00601JUTgy1fpu6s05kzjj30s80k076a.jpg" alt="编译成功"></p>
+</li>
+<li><p>导入IDE</p>
+<p> 使用IntelliJ IDEA导入，默认配置即可。</p>
+</li>
+</ol>
+<h3 id="reference"><a href="#reference" class="headerlink" title="reference"></a>reference</h3><p>[1] <a href="https://www.zhihu.com/question/24869894/answer/97339151" target="_blank" rel="noopener">https://www.zhihu.com/question/24869894/answer/97339151</a><br>[2] <a href="https://blog.csdn.net/peter1220/article/details/52490886" target="_blank" rel="noopener">https://blog.csdn.net/peter1220/article/details/52490886</a></p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+        <div class="post-tags">
+          
+            <a href="/tags/Spark/">Spark</a>
+          
+        </div>
+
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2018/02/22/Spark-环境搭建-Standalone-Mode/">
+        <span class="next-text nav-default">Spark | 环境搭建 - Standalone Mode</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2012 -
+    
+    2018
+    <span class="footer-author">Lucy.</span>
+    <span class="power-by">
+        Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a> and <a class="theme-link" href="https://github.com/henryhuang/hexo-theme-polarbearsimple">Polar Bear Simple</a>
+    </span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>
