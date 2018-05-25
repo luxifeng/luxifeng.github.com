@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="description" content="MySQL | 大量数据导出和写入的思考"/>
+
+
+
+
+  <meta name="keywords" content="MySQL," />
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Lucy">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1" />
+
+
+
+<link rel="canonical" href="http://luxifeng.github.io/2018/05/26/MySQL-大量数据导出和写入的思考/"/>
+
+
+<meta name="description" content="在雪球网的单线程爬虫写完之后，PC跑了三天不到，收集了大约94万条记录。尽管速度很慢，但由于数据收集迫在眉睫，在爬虫速度改进之前，仍需单线程爬虫服役。然而家里的网络环境不稳定，偶尔会接到电路维修的通知，路由器一停工作，爬虫也死翘翘了。这一情况也暴露了一个重要的问题，即爬虫异常停止之后，无法沿着关联路径回到异常前的点，导致网络的深度不复原来的1000层，多次异常重启之后，网络的深度停留在2、3层，这">
+<meta name="keywords" content="MySQL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL | 大量数据导出和写入的思考">
+<meta property="og:url" content="http://luxifeng.github.io/2018/05/26/MySQL-大量数据导出和写入的思考/index.html">
+<meta property="og:site_name" content="Lucy">
+<meta property="og:description" content="在雪球网的单线程爬虫写完之后，PC跑了三天不到，收集了大约94万条记录。尽管速度很慢，但由于数据收集迫在眉睫，在爬虫速度改进之前，仍需单线程爬虫服役。然而家里的网络环境不稳定，偶尔会接到电路维修的通知，路由器一停工作，爬虫也死翘翘了。这一情况也暴露了一个重要的问题，即爬虫异常停止之后，无法沿着关联路径回到异常前的点，导致网络的深度不复原来的1000层，多次异常重启之后，网络的深度停留在2、3层，这">
+<meta property="og:updated_time" content="2018-05-25T19:07:10.837Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL | 大量数据导出和写入的思考">
+<meta name="twitter:description" content="在雪球网的单线程爬虫写完之后，PC跑了三天不到，收集了大约94万条记录。尽管速度很慢，但由于数据收集迫在眉睫，在爬虫速度改进之前，仍需单线程爬虫服役。然而家里的网络环境不稳定，偶尔会接到电路维修的通知，路由器一停工作，爬虫也死翘翘了。这一情况也暴露了一个重要的问题，即爬虫异常停止之后，无法沿着关联路径回到异常前的点，导致网络的深度不复原来的1000层，多次异常重启之后，网络的深度停留在2、3层，这">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1" />
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+    <title> MySQL | 大量数据导出和写入的思考 - Lucy </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">Lucy</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          MySQL | 大量数据导出和写入的思考
+        
+      </h1>
+
+      <time class="post-time">
+          May 26 2018
+      </time>
+    </header>
+
+
+
+    
+            <div class="post-content">
+            <p>在雪球网的单线程爬虫写完之后，PC跑了三天不到，收集了大约94万条记录。尽管速度很慢，但由于数据收集迫在眉睫，在爬虫速度改进之前，仍需单线程爬虫服役。然而家里的网络环境不稳定，偶尔会接到电路维修的通知，路由器一停工作，爬虫也死翘翘了。这一情况也暴露了一个重要的问题，即爬虫异常停止之后，无法沿着关联路径回到异常前的点，导致网络的深度不复原来的1000层，多次异常重启之后，网络的深度停留在2、3层，这令人相当郁闷。</p>
+<p>先撇开爬虫的问题不谈，当务之急是确保爬虫尽可能地24小时工作，以便尽快收集数据。因此想到购买VPS，将程序部署到服务器上去。在申请和配置好VPS及MySQL数据库之后，第一步就是将本地MySQL中的94万条数据导到VPS上的MySQL中。在这过程中，如何快速导出数据和快速插入数据成为思考和实践的点。</p>
+<h3 id="我的数据库表"><a href="#我的数据库表" class="headerlink" title="我的数据库表"></a>我的数据库表</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> xueqiu_users (</span><br><span class="line">  <span class="keyword">id</span> <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> AUTO_INCREMENT,</span><br><span class="line">  user_id <span class="built_in">varchar</span>(<span class="number">64</span>) <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'用户id'</span>,</span><br><span class="line">  description <span class="built_in">varchar</span>(<span class="number">4096</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'描述签名'</span>,</span><br><span class="line">  screen_name <span class="built_in">varchar</span>(<span class="number">128</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'用户名'</span>,</span><br><span class="line">  friends_count <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'关注人数'</span>,</span><br><span class="line">  followers_count <span class="built_in">int</span>(<span class="number">11</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'粉丝人数'</span>,</span><br><span class="line">  province <span class="built_in">varchar</span>(<span class="number">64</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'省份'</span>,</span><br><span class="line">  city <span class="built_in">varchar</span>(<span class="number">64</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'城市'</span>,</span><br><span class="line">  gender <span class="built_in">varchar</span>(<span class="number">64</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'性别'</span>,</span><br><span class="line">  profile <span class="built_in">varchar</span>(<span class="number">512</span>) <span class="keyword">DEFAULT</span> <span class="literal">NULL</span> <span class="keyword">COMMENT</span> <span class="string">'账户'</span>,</span><br><span class="line">  update_time <span class="keyword">timestamp</span> <span class="keyword">NOT</span> <span class="literal">NULL</span> <span class="keyword">DEFAULT</span> <span class="keyword">CURRENT_TIMESTAMP</span> <span class="keyword">ON</span> <span class="keyword">UPDATE</span> <span class="keyword">CURRENT_TIMESTAMP</span> <span class="keyword">COMMENT</span> <span class="string">'插入时间戳'</span>,</span><br><span class="line">  <span class="keyword">UNIQUE</span> <span class="keyword">KEY</span> (user_id),</span><br><span class="line">  <span class="keyword">KEY</span> <span class="keyword">id</span> (<span class="keyword">id</span>)</span><br><span class="line">) <span class="keyword">ENGINE</span>=MyISAM AUTO_INCREMENT=<span class="number">1</span> <span class="keyword">DEFAULT</span> <span class="keyword">CHARSET</span>=utf8;</span><br></pre></td></tr></table></figure>
+<h3 id="导出数据"><a href="#导出数据" class="headerlink" title="导出数据"></a>导出数据</h3><p>显然，对于94万条数据，一条一条读取数据库表可行但不可取，原因有二，一是效率不高，二是查询条件是什么才能保证每次拿到不一样的数据并且拿到所有数据？</p>
+<p>于是很容易想到批量取数。</p>
+<p>最先的思路是使用分页，先用count()拿到记录总数，然后用limit逐页取数。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> xueqiu_users <span class="keyword">limit</span> %s, %s</span><br></pre></td></tr></table></figure>
+<p>第一个%s为起始，第二个%s为条数，但是速度并不快，且第一个%s越大越慢。</p>
+<p>搜了一把，发现大家的优化方法是对自增id做where条件限定。因为对id做了索引，所以查询起来会快很多。</p>
+<p>于是思路就变成了：先查询max(id)，然后用where条件查询。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> xueqiu_users <span class="keyword">where</span> <span class="keyword">id</span> &gt;= %s <span class="keyword">and</span> <span class="keyword">id</span> &lt; %s</span><br></pre></td></tr></table></figure>
+<p>这个就快很多了。回头看优化思路，是个很简单的方法。唉，还是自己没学好数据库、经验不足，没有想到！</p>
+<h3 id="写入数据"><a href="#写入数据" class="headerlink" title="写入数据"></a>写入数据</h3><p>同样也是采用批量写入的方法，比如每1万条插入一次，commit一把，没什么好说的。</p>
+<p>批量插入和commit与单条插入和commit的效率对比可见<a href="https://www.cnblogs.com/hyace/p/4173831.html" target="_blank" rel="noopener">该博客</a>。</p>
+<p>最后，批量读写使得94万条数据的迁移在10分钟内完成了。</p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/">MySQL</a>
+          
+        </div>
+
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2018/05/21/Python-爬取雪球用户基本信息/">
+        <span class="next-text nav-default">Python | 爬取雪球用户基本信息</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2012 -
+    
+    2018
+    <span class="footer-author">Lucy.</span>
+    <span class="power-by">
+        Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a> and <a class="theme-link" href="https://github.com/henryhuang/hexo-theme-polarbearsimple">Polar Bear Simple</a>
+    </span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>
