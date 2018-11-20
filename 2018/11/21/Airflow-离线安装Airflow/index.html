@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="description" content="Airflow | 离线安装Airflow"/>
+
+
+
+
+  <meta name="keywords" content="Airflow," />
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Lucy">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1" />
+
+
+
+<link rel="canonical" href="http://luxifeng.github.io/2018/11/21/Airflow-离线安装Airflow/"/>
+
+
+<meta name="description" content="好久没有po文章啦~太懒惹 (//▽//) 工作中用到Airflow，为此折腾了几天文档和资料，发现目前网上没有离线安装Airflow的文章。虽然和在线安装大致上差不多，但是有一些小细节还是值得一提。为此做了这份文档，一来总结这几日的工作，二来为生产环境的安装做准备。 进入正题！！！ 本文主要介绍Airflow在不能联网服务器上的安装，并通过Celery+Redis方案构建集群。 一、准备工作">
+<meta name="keywords" content="Airflow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Airflow | 离线安装Airflow">
+<meta property="og:url" content="http://luxifeng.github.io/2018/11/21/Airflow-离线安装Airflow/index.html">
+<meta property="og:site_name" content="Lucy">
+<meta property="og:description" content="好久没有po文章啦~太懒惹 (//▽//) 工作中用到Airflow，为此折腾了几天文档和资料，发现目前网上没有离线安装Airflow的文章。虽然和在线安装大致上差不多，但是有一些小细节还是值得一提。为此做了这份文档，一来总结这几日的工作，二来为生产环境的安装做准备。 进入正题！！！ 本文主要介绍Airflow在不能联网服务器上的安装，并通过Celery+Redis方案构建集群。 一、准备工作">
+<meta property="og:updated_time" content="2018-11-20T16:45:55.991Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Airflow | 离线安装Airflow">
+<meta name="twitter:description" content="好久没有po文章啦~太懒惹 (//▽//) 工作中用到Airflow，为此折腾了几天文档和资料，发现目前网上没有离线安装Airflow的文章。虽然和在线安装大致上差不多，但是有一些小细节还是值得一提。为此做了这份文档，一来总结这几日的工作，二来为生产环境的安装做准备。 进入正题！！！ 本文主要介绍Airflow在不能联网服务器上的安装，并通过Celery+Redis方案构建集群。 一、准备工作">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1" />
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+    <title> Airflow | 离线安装Airflow - Lucy </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">Lucy</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="http://lxfantasy.lofter.com">
+                            
+                            
+                                Gallery
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Airflow | 离线安装Airflow
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 21 2018
+      </time>
+    </header>
+
+
+
+    
+            <div class="post-content">
+            <p>好久没有po文章啦~太懒惹 (//▽//)</p>
+<p>工作中用到Airflow，为此折腾了几天文档和资料，发现目前网上没有离线安装Airflow的文章。虽然和在线安装大致上差不多，但是有一些小细节还是值得一提。为此做了这份文档，一来总结这几日的工作，二来为生产环境的安装做准备。</p>
+<p>进入正题！！！</p>
+<p>本文主要介绍Airflow在不能联网服务器上的安装，并通过Celery+Redis方案构建集群。</p>
+<h3 id="一、准备工作"><a href="#一、准备工作" class="headerlink" title="一、准备工作"></a>一、准备工作</h3><table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align:left">可联网PC（外网）</th>
+<th style="text-align:left">不可联网服务器（内网）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>系统版本</td>
+<td style="text-align:left">Ubuntu 16.04LTS</td>
+<td style="text-align:left">CentOS 7.2</td>
+</tr>
+<tr>
+<td>Python版本</td>
+<td style="text-align:left">Python 3.5</td>
+<td style="text-align:left">Python-2.7.5-34、 Anaconda3-4.2.0（Python 3.5）</td>
+</tr>
+<tr>
+<td>Pip版本</td>
+<td style="text-align:left">8.1.1</td>
+<td style="text-align:left">8.1.2</td>
+</tr>
+<tr>
+<td>已安装组件</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">MySQL 5.6</td>
+</tr>
+<tr>
+<td>未安装组件</td>
+<td style="text-align:left"></td>
+<td style="text-align:left">Anaconda3 4.2.0，Airflow 1.10及子包，Celery，Redis</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li><p>外网下载<a href="https://www.anaconda.com/download/" target="_blank" rel="noopener">Anaconda3安装包</a>，注意Anaconda Python版本：</p>
+<ul>
+<li><strong>需与外网Python版本一致</strong>，否则外网下载的依赖包可能有版本问题</li>
+<li><strong>需与Airflow版本适配</strong>，建议Airflow1.10及以下版本使用Python 3.6及以下</li>
+<li>Python2也可以的，只要保证内外网版本一致，与Airflow适配</li>
+</ul>
+</li>
+<li><p>外网下载apache-airflow的python依赖包及子包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">mkdir ~/Desktop/airflow-dep</span><br><span class="line"><span class="comment"># 解除GPL库依赖</span></span><br><span class="line"><span class="built_in">export</span> SLUGIFY_USES_TEXT_UNIDECODE=yes</span><br><span class="line"><span class="comment"># 下载基础包及依赖</span></span><br><span class="line">pip download -d ~/Desktop/airflow-dep/ apache-airflow</span><br><span class="line"><span class="comment"># 下载子包及依赖</span></span><br><span class="line">pip download -d ~/Desktop/airflow-dep/ apache-airflow[celery]</span><br><span class="line">pip download -d ~/Desktop/airflow-dep/ apache-airflow[redis]</span><br><span class="line"><span class="comment"># ... 其他需要的子包</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>外网下载MySQLdb包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 若配置MySQL为Airflow的数据库后端，则要导入MySQLdb包</span></span><br><span class="line">mkdir ~/Desktop/mysql-dep</span><br><span class="line">pip download -d ~/Desktop/mysql-dep/ mysqlclient</span><br><span class="line"><span class="comment"># 另需python-devel和mysql-community-devel</span></span><br><span class="line"><span class="comment"># python-devel版本应对应python版本2.7.5-34，小版本也要对应！下载见http://ftp.riken.jp/Linux/cern/centos/7/updates/x86_64/repoview/python-devel.html</span></span><br><span class="line"><span class="comment"># mysql-community-devel的依赖包包括mysql-community-common和mysql-community-libs，下载见https://centos.pkgs.org/7/mysql-5.6-x86_64/mysql-community-devel-5.6.42-2.el7.x86_64.rpm.html</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>外网下载celery[redis]的python依赖包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 若使用celery扩展集群，并将redis作为celery broker，则要导入celery[redis]包</span></span><br><span class="line">mkdir ~/Desktop/celery-dep</span><br><span class="line">pip download -d ~/Desktop/celery-dep/ celery[redis]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>其他组件：redis</p>
+<p>下载地址：<a href="https://redis.io/download" target="_blank" rel="noopener">https://redis.io/download</a></p>
+</li>
+</ol>
+<h3 id="二、离线安装"><a href="#二、离线安装" class="headerlink" title="二、离线安装"></a>二、离线安装</h3><ol>
+<li><p>创建用户并配置目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 添加用户airflow/airflow</span></span><br><span class="line">adduser airflow</span><br><span class="line">passwd airflow</span><br><span class="line">su airflow</span><br><span class="line"><span class="comment"># 新建安装包目录software</span></span><br><span class="line">mkdir ~/software</span><br><span class="line"><span class="comment"># 新建安装目录application</span></span><br><span class="line">mkdir ~/application</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装Anaconda</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 安装到/home/airflow/application/anaconda3</span></span><br><span class="line">bash ~/software/Anaconda3-4.2.0-Linux-x86_64.sh</span><br><span class="line"><span class="comment"># 为不影响已安装的组件Aerospike，将python版本恢复为系统默认的2.7版本</span></span><br><span class="line">mv ~/application/anaconda3/bin/python ~/application/anaconda3/bin/python.bak</span><br><span class="line">ln -s /usr/bin/python2 ~/application/anaconda3/bin/python</span><br><span class="line"><span class="comment"># 配置环境变量</span></span><br><span class="line">vim ~/.bashrc</span><br><span class="line"><span class="built_in">export</span> ANACONDA_HOME=/home/airflow/application/anaconda3</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$ANACONDA_HOME</span>/bin:<span class="variable">$PATH</span></span><br><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装Airflow及子包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 新建安装目录</span></span><br><span class="line">mkdir ~/application/airflow</span><br><span class="line"><span class="comment"># 配置环境变量</span></span><br><span class="line">vim ~/.bashrc</span><br><span class="line"><span class="built_in">export</span> AIRFLOW_HOME=/home/airflow/application/airflow</span><br><span class="line"><span class="built_in">source</span> ~/.bashrc</span><br><span class="line"><span class="comment"># 解除GPL依赖</span></span><br><span class="line"><span class="built_in">export</span> SLUGIFY_USES_TEXT_UNIDECODE=yes</span><br><span class="line"><span class="comment"># 安装基础包</span></span><br><span class="line">python3 -m pip install --no-index --use-wheel --find-links=~/software/airflow-dep/ apache-airflow</span><br><span class="line">airflow initdb</span><br><span class="line"><span class="comment"># 安装子包</span></span><br><span class="line">python3 -m pip install --no-index --use-wheel --find-links=~/software/airflow-dep/ apache-airflow[celery]</span><br><span class="line">python3 -m pip install --no-index --use-wheel --find-links=~/software/airflow-dep/ apache-airflow[redis]</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>注意Airflow版本与Python版本的适配，Airflow 1.10及以下不能适配Python 3.7版本及以上，因为Airflow的<code>setup.py</code>的文件中有个变量名变成了Python 3.7的关键词，见<a href="https://stackoverflow.com/questions/53176846/command-python-setup-py-egg-info-failed" target="_blank" rel="noopener">Command “python setup.py egg_info” failed</a>。如果Python环境为3.7，解决方案有二：</p>
+<ul>
+<li><p>将Anaconda3环境变成Python 3.6及以下版本</p>
+</li>
+<li><p>解压缩<code>apache-airflow-XXX.tar.gz</code>，修改变量名async为非关键词，重新打包为tar.gz</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 新建临时目录tmp</span></span><br><span class="line">mkdir ~/tmp</span><br><span class="line"><span class="comment"># 解压</span></span><br><span class="line">tar zxvf ~/software/airflow-dep/apache-airflow*tar.gz -C ~/tmp/</span><br><span class="line"><span class="comment"># 修改，将变量名async改为async_b/async_x/...，有2处，改完保存</span></span><br><span class="line">vim ~/tmp/apache-airflow-XXX/setup.py</span><br><span class="line"><span class="comment"># 压缩</span></span><br><span class="line">tar zcvf ~/tmp/apache-airflow-XXX.tar.gz ~/tmp/apache-airflow-XXX</span><br><span class="line"><span class="comment"># 拷贝</span></span><br><span class="line">cp ~/tmp/apache-airflow-XXX ~/software/airflow-dep/</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>根据安装过程中的提醒，添加、升级、降级依赖包。例如：<code>no local packages or download links found for docutils</code>，原因是Anaconda中已有包，但是版本过低，则要手动<code>python3 -m pip install ~/software/airflow-dep/docutils-xxxxx.wheel</code>，会先卸载再安装新版本</p>
+</li>
+</ul>
+</li>
+<li><p>安装Celery（带Redis支持）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 -m pip install --no-index --find-links=/home/airflow/software/airflow-dep/ celery[redis]</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装MySQLdb包</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">su root</span><br><span class="line"><span class="comment"># 安装python-devel</span></span><br><span class="line">rpm -ivh ~/software/mysql-dep/mysql-community-common-*.rpm</span><br><span class="line"><span class="comment"># 安装mysql-devel</span></span><br><span class="line">rpm -ivh ~/software/mysql-dep/mysql-community-common-*.rpm</span><br><span class="line">rpm -ivh ~/software/mysql-dep/mysql-community-libs-*.rpm</span><br><span class="line">rpm -ivh ~/software/mysql-dep/mysql-community-devel-*.rpm</span><br><span class="line"><span class="comment"># 安装mysqlclient</span></span><br><span class="line">su airflow</span><br><span class="line">python3 -m pip install --no-index --use-wheel --find-links=~/software/mysql-dep/ mysqlclient</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>安装<code>mysql-community-common-*.rpm</code>时若发现与<code>mariadb-libs-XXX</code>冲突</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rpm -qa | grep mariadb</span><br><span class="line">rpm -ev --nodeps mariadb-libs-XXX</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装<code>mysql-community-libs-*.rpm</code>时若发现少了依赖，根据提示下载响应的依赖包及依赖的依赖，放在一起安装</p>
+</li>
+</ul>
+</li>
+<li><p>回到1，在集群中的其他机器上配置用户和创建目录、安装Anaconda3、Airflow、Celery、MySQLdb</p>
+</li>
+<li><p>配置MySQL，作为Airflow数据库后端（配置MySQL所在的机器就可以了）</p>
+<p><strong>Step 1:</strong> MySQL创建用户airflow/airflow123</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create user &apos;airflow&apos;@&apos;%&apos; identified by &apos;airflow123&apos;;</span><br></pre></td></tr></table></figure>
+<p><strong>Step 2:</strong> MySQL创建数据库并授权给用户airflow</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">create database airflow;</span><br><span class="line">grant all privileges on airflow.* to &apos;airflow&apos;@&apos;%&apos;;</span><br><span class="line">flush privilege;</span><br></pre></td></tr></table></figure>
+<p><strong>Step 3:</strong> 修改MySQL配置文件，配置文件为<code>my.cnf</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explicit_defaults_for_timestamp=<span class="literal">true</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p>安装Redis</p>
+<p>见<a href="https://www.jianshu.com/p/c450612c6295" target="_blank" rel="noopener">CentOS 7 reids安装-笔记</a></p>
+<p>安装在<code>/home/airflow/application/redis</code></p>
+</li>
+</ol>
+<h3 id="三、启动服务"><a href="#三、启动服务" class="headerlink" title="三、启动服务"></a>三、启动服务</h3><ol>
+<li><p>修改Airflow配置，配置文件在<code>$AIRFLOW_HOME/airflow.cfg</code></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># airflow元数据库连接语句</span></span><br><span class="line">sql_alchemy_conn = mysql://airflow:airflow123@zy-tdh06/airflow</span><br><span class="line"><span class="comment"># 设置dag在启动时暂停，避免不必要的工作流运行（推荐）</span></span><br><span class="line">dags_are_paused_at_creation = True</span><br><span class="line"><span class="comment"># 不加载dag示例</span></span><br><span class="line">load_examples = False</span><br><span class="line"><span class="comment"># celery borker为redis地址</span></span><br><span class="line">broker_url = redis://zy-tdh06:6379/0</span><br><span class="line"><span class="comment"># celery后端数据库仍用mysql</span></span><br><span class="line">celery_result_backend = db+mysql://airflow:airflow123@zy-tdh06:3306/airflow </span><br><span class="line"><span class="comment"># 可将执行器设置为CeleryExecutor</span></span><br><span class="line">executor = CeleryExecutor</span><br><span class="line"><span class="comment"># CeleryExecutors默认监听的队列</span></span><br><span class="line">default_queue = airflow</span><br></pre></td></tr></table></figure>
+<ul>
+<li>关于多台机器dag的同步，每台机子都会访问<code>airflow.cfg</code>中配置的<code>DAGS_FOLDER</code>，因此要保持不同机器的目录下的dag文件是同步的</li>
+<li>集群中每台机器的Airflow配置应一致，即<code>airflow.cfg</code>文件相同</li>
+</ul>
+</li>
+<li><p>初始化Airflow数据库</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">airflow initdb</span><br></pre></td></tr></table></figure>
+<ul>
+<li>碰到<code>libmysqlclient.so.18: cannot open shared object file: No such file or directory</code>，解决方法见<a href="https://blog.csdn.net/m0_37886429/article/details/78350343" target="_blank" rel="noopener">此文章</a></li>
+</ul>
+</li>
+<li><p>创建必需的目录</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mkdir <span class="variable">$AIRFLOW_HOME</span>/dags</span><br><span class="line">mkdir <span class="variable">$AIRFLOW_HOME</span>/logs</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>回到1，对集群上的其他机器做同样操作</p>
+</li>
+<li><p>在每一个工作节点上</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动worker</span></span><br><span class="line">nohup airflow worker $* &gt;&gt; <span class="variable">$AIRFLOW_HOME</span>/logs/worker.log &amp;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在server节点上启动web服务</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 启动web ui</span></span><br><span class="line">nohup airflow webserver $* &gt;&gt; <span class="variable">$AIRFLOW_HOME</span>/logs/webserver.log &amp;</span><br><span class="line"><span class="comment"># 启动调度</span></span><br><span class="line">nohup airflow scheduler &gt;&gt; <span class="variable">$AIRFLOW_HOME</span>/logs/scheduler.log &amp;</span><br><span class="line"><span class="comment"># 也作为一个工作节点</span></span><br><span class="line">nohup airflow worker $* &gt;&gt; <span class="variable">$AIRFLOW_HOME</span>/logs/worker.log &amp;</span><br><span class="line"><span class="comment"># 用于监控worker</span></span><br><span class="line">nohup airflow flower &gt;&gt; <span class="variable">$AIRFLOW_HOME</span>/logs/flower.log &amp;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Web UI</p>
+<ul>
+<li>Airflow UI: <a href="http://hostname:8080/admin/" target="_blank" rel="noopener">http://hostname:8080/admin/</a></li>
+<li>Flower UI: <a href="http://hostname:5555/" target="_blank" rel="noopener">http://hostname:5555/</a></li>
+</ul>
+</li>
+<li><p>停止服务，比如添加plugin后要重启</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 获取PID</span></span><br><span class="line">ps -eaf | grep airflow</span><br><span class="line"><span class="comment"># 杀掉进程</span></span><br><span class="line"><span class="built_in">kill</span> -9 &#123;PID&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>好啦，Airflow的离线安装和集群部署就结束了！</p>
+<p>现在做的是开发plugin以及空闲时间翻译Airflow官方文档（进度超慢的〒▽〒），下篇文章打算写写Airflow plugin的开发，也是迷糊了几天呢~</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p>[1] Apache Airflow (incubating) Documentation, <a href="https://airflow.apache.org/" target="_blank" rel="noopener">https://airflow.apache.org/</a></p>
+<p>[2] Get started developing workflows with Apache Airflow, <a href="http://michal.karzynski.pl/blog/2017/03/19/developing-workflows-with-apache-airflow/" target="_blank" rel="noopener">http://michal.karzynski.pl/blog/2017/03/19/developing-workflows-with-apache-airflow/</a></p>
+<p>[3] Installing and Configuring Apache Airflow, <a href="http://site.clairvoyantsoft.com/installing-and-configuring-apache-airflow/" target="_blank" rel="noopener">http://site.clairvoyantsoft.com/installing-and-configuring-apache-airflow/</a></p>
+<p>[4] A Guide On How To Build An Airflow Server/Cluster, <a href="https://stlong0521.github.io/20161023%20-%20Airflow.html" target="_blank" rel="noopener">https://stlong0521.github.io/20161023%20-%20Airflow.html</a></p>
+
+            </div>
+          
+
+    
+      <footer class="post-footer">
+        <div class="post-tags">
+          
+            <a href="/tags/Airflow/">Airflow</a>
+          
+        </div>
+
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2018/05/26/MySQL-大量数据导出和写入的思考/">
+        <span class="next-text nav-default">MySQL | 大量数据导出和写入的思考</span>
+        <span class="prev-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2012 -
+    
+    2018
+    <span class="footer-author">Lucy.</span>
+    <span class="power-by">
+        由 <a class="hexo-link" href="https://hexo.io/">Hexo</a> and <a class="theme-link" href="https://github.com/henryhuang/hexo-theme-polarbearsimple">Polar Bear Simple</a> 强力驱动
+    </span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>
