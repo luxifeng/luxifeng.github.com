@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,minimum-scale=1,maximum-scale=1">
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+  <meta name="description" content="Airflow | Plugins开发"/>
+
+
+
+
+  <meta name="keywords" content="Airflow," />
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Lucy">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1.1" />
+
+
+
+<link rel="canonical" href="http://luxifeng.github.io/2018/11/22/Airflow-Plugins开发/"/>
+
+
+<meta name="description" content="Airflow Plugins若大佬已对Airflow Plugins了解，请跳过这一小节吧！ 开发第一个Airflow Plugins之前，让我们先了解一下相关概念。而想了解Airflow Plugins的概念和使用，最好的方法莫过于阅读官方文档 ^_~ 下文摘录了部分语句：  Airflow拥有简单的内置plugin管理器，能够把外部特性整合到Airflow内核，只需将plugin文件放置到你">
+<meta name="keywords" content="Airflow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Airflow | Plugins开发">
+<meta property="og:url" content="http://luxifeng.github.io/2018/11/22/Airflow-Plugins开发/index.html">
+<meta property="og:site_name" content="Lucy">
+<meta property="og:description" content="Airflow Plugins若大佬已对Airflow Plugins了解，请跳过这一小节吧！ 开发第一个Airflow Plugins之前，让我们先了解一下相关概念。而想了解Airflow Plugins的概念和使用，最好的方法莫过于阅读官方文档 ^_~ 下文摘录了部分语句：  Airflow拥有简单的内置plugin管理器，能够把外部特性整合到Airflow内核，只需将plugin文件放置到你">
+<meta property="og:updated_time" content="2019-02-27T16:36:17.673Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Airflow | Plugins开发">
+<meta name="twitter:description" content="Airflow Plugins若大佬已对Airflow Plugins了解，请跳过这一小节吧！ 开发第一个Airflow Plugins之前，让我们先了解一下相关概念。而想了解Airflow Plugins的概念和使用，最好的方法莫过于阅读官方文档 ^_~ 下文摘录了部分语句：  Airflow拥有简单的内置plugin管理器，能够把外部特性整合到Airflow内核，只需将plugin文件放置到你">
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=1.1" />
+<link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
+
+
+
+
+
+<script type="text/javascript">
+  var themeConfig = {
+    fancybox: {
+      enable: false
+    },
+  };
+</script>
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+    <title> Airflow | Plugins开发 - Lucy </title>
+  </head>
+
+  <body>
+    <div id="page">
+      <header id="masthead"><div class="site-header-inner">
+    <h1 class="site-title">
+        <a href="/." class="logo">Lucy</a>
+    </h1>
+
+    <nav id="nav-top">
+        
+            <ul id="menu-top" class="nav-top-items">
+                
+                    <li class="menu-item">
+                        <a href="http://lxfantasy.lofter.com">
+                            
+                            
+                                Gallery
+                            
+                        </a>
+                    </li>
+                
+                    <li class="menu-item">
+                        <a href="/about">
+                            
+                            
+                                About
+                            
+                        </a>
+                    </li>
+                
+            </ul>
+        
+  </nav>
+</div>
+
+      </header>
+      <div id="content">
+        
+    <div id="primary">
+        
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Airflow | Plugins开发
+        
+      </h1>
+
+      <time class="post-time">
+          Nov 22 2018
+      </time>
+    </header>
+
+
+
+    
+            <div class="post-content">
+            <h3 id="Airflow-Plugins"><a href="#Airflow-Plugins" class="headerlink" title="Airflow Plugins"></a>Airflow Plugins</h3><p><em>若大佬已对Airflow Plugins了解，请跳过这一小节吧！</em></p>
+<p>开发第一个Airflow Plugins之前，让我们先了解一下相关概念。而想了解Airflow Plugins的概念和使用，最好的方法莫过于阅读<a href="https://airflow.apache.org/plugins.html" target="_blank" rel="noopener">官方文档</a> ^_~</p>
+<p>下文摘录了部分语句：</p>
+<blockquote>
+<p>Airflow拥有简单的内置plugin管理器，能够把外部特性整合到Airflow内核，只需将plugin文件放置到你的<code>$AIRFLOW_HOME/plugins</code>文件夹下。</p>
+<p>……</p>
+<p>Airflow为数据处理提供了通用工具箱。不同的组织有不同的技术栈和不同的需求。对于企业，使用Airflow插件是定制Airflow、反映其生态系统的一种方式。</p>
+<p>Plugins易于编写、分享和激活一些特性。</p>
+<p>一些更为复杂的应用也需要与不同形式的数据和元数据交互。</p>
+<p>……</p>
+</blockquote>
+<p>也就是说，Airflow Plugins提供了一种扩展能力，使得Airflow内核可以触达外部应用。实际上，plugins是一套<a href="https://airflow.apache.org/concepts.html#hooks" target="_blank" rel="noopener">hooks</a>、<a href="https://airflow.apache.org/concepts.html#operators" target="_blank" rel="noopener">operators</a>、<a href="https://airflow.apache.org/concepts.html#operators" target="_blank" rel="noopener">sensors</a>、<a href="https://airflow.apache.org/code.html#macros" target="_blank" rel="noopener">macros</a>、executors和<a href="https://airflow.apache.org/ui.html" target="_blank" rel="noopener">web views</a>的组件（或python模块）集合，通过放置python文件到plugins文件夹下，这些组件就能在定义和运行工作流时被调用。</p>
+<p>例如，<code>SparkSubmitOperator</code>对<code>spark-submit</code>进行包装，用于启动<code>spark-submit</code>作业。如果我们想在工作流中增加一个任务，提交jar作业到Spark集群上运行，那么就在工作流定义中实例化<code>SparkSubmitOperator</code>，再配置相应的参数。</p>
+<p>工作流定义代码示例如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> airflow <span class="keyword">import</span> DAG</span><br><span class="line"><span class="keyword">from</span> airflow.contrib.operators.spark_submit_operator <span class="keyword">import</span> SparkSubmitOperator</span><br><span class="line"><span class="keyword">from</span> datetime <span class="keyword">import</span> datetime, timedelta</span><br><span class="line"></span><br><span class="line">default_args = &#123;</span><br><span class="line">    <span class="string">'owner'</span>: <span class="string">'Lucy'</span>,</span><br><span class="line">    <span class="string">'depends_on_past'</span>: <span class="keyword">False</span>,</span><br><span class="line">    <span class="string">'start_date'</span>: datetime(<span class="number">2019</span>, <span class="number">1</span>, <span class="number">5</span>),</span><br><span class="line">    <span class="string">'email'</span>: [<span class="string">'me@email.com'</span>],</span><br><span class="line">    <span class="string">'email_on_failure'</span>: <span class="keyword">False</span>,</span><br><span class="line">    <span class="string">'email_on_retry'</span>: <span class="keyword">False</span>,</span><br><span class="line">    <span class="string">'retries'</span>: <span class="number">1</span>,</span><br><span class="line">    <span class="string">'retry_delay'</span>: timedelta(minutes=<span class="number">5</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dag = DAG(<span class="string">'spark_submit_dag'</span>, default_args=default_args, schedule_interval=timedelta(days=<span class="number">1</span>))</span><br><span class="line"></span><br><span class="line">t1 = SparkSubmitOperator(task_id=<span class="string">'spark_submit_task'</span>,</span><br><span class="line">                         application=<span class="string">'/home/airflow/spark_job/spark-submit-test.jar'</span>,</span><br><span class="line">                         conn_id=<span class="string">'spark_default'</span>,</span><br><span class="line">                         name=<span class="string">'spark_submit_task'</span>,</span><br><span class="line">                         java_class=<span class="string">'com.test.WordCount'</span>,</span><br><span class="line">                         dag=dag)</span><br></pre></td></tr></table></figure>
+<p>上面配置给SparkSubmitOperator的参数列表中，我们提供了必要的参数，包括任务id（task_id）、本地jar包（application）、连接id（conn_id，后文详述）、应用名称（name）、应用主程序（java_class）。这样，当工作流按要求时间运行时，<code>t1</code>任务就能使用<code>spark-submit</code>命令提交作业。</p>
+<p>再来，思考两个问题：</p>
+<ol>
+<li><code>SparkSubmitOperator</code>是如何封装<code>spark-submit</code>，将参数组装成<code>spark-submit --master yarn --name spark_submit_task --class com.test.WordCount /home/airflow/spark_job/spark-submit-test.jar</code>的命令并执行？</li>
+<li><code>SparkSubmitOperator</code>如何提交作业到远程Spark集群？如何选择任务队列？能否改<code>spark-submit</code>命令为<code>spark2-submit</code>？</li>
+</ol>
+<p>我们来看看<code>SparkSubmitOperator</code><a href="https://github.com/apache/incubator-airflow/blob/master/airflow/contrib/operators/spark_submit_operator.py" target="_blank" rel="noopener">源码</a>。<code>SparkSubmitOperator</code>继承了<code>BaseOperator</code>类，并且实现<code>BaseOperator</code>的<code>execute</code>方法。在方法中，<code>SparkSubmitOperator</code>实例化了<code>SparkSubmitHook</code>类，并调用<code>submit</code>方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">SparkSubmitOperator</span><span class="params">(BaseOperator)</span>:</span></span><br><span class="line">    </span><br><span class="line">    ......</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">execute</span><span class="params">(self, context)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Call the SparkSubmitHook to run the provided spark job</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        self._hook = SparkSubmitHook(conf=self._conf, conn_id=self._conn_id, ...)</span><br><span class="line">        self._hook.submit(self._application)</span><br><span class="line">    </span><br><span class="line">    ....</span><br></pre></td></tr></table></figure>
+<p>Hook类是什么鬼？如官网文档中所述，hooks是外部平台和数据库的接口，如hive、s3、mysql、postgres、hdfs和pig。钩子在可能的情况下实现一个公共接口，并作为操作人员的构建块。他们还使用airflow.models.connection模型来检索主机名和身份验证信息。钩子使认证代码和信息远离管道，集中在元数据数据库中。</p>
+<h3 id="Hooks"><a href="#Hooks" class="headerlink" title="Hooks"></a>Hooks</h3><h3 id="Operators"><a href="#Operators" class="headerlink" title="Operators"></a>Operators</h3><h3 id="Sensors"><a href="#Sensors" class="headerlink" title="Sensors"></a>Sensors</h3><h3 id="Macros"><a href="#Macros" class="headerlink" title="Macros"></a>Macros</h3><h3 id="Executors"><a href="#Executors" class="headerlink" title="Executors"></a>Executors</h3><h3 id="Views"><a href="#Views" class="headerlink" title="Views"></a>Views</h3>
+            </div>
+          
+
+    
+      <footer class="post-footer">
+        <div class="post-tags">
+          
+            <a href="/tags/Airflow/">Airflow</a>
+          
+        </div>
+
+        
+        
+  <nav class="post-nav">
+    
+      <a class="prev" href="/2019/02/27/捐了今年的第一笔钱！/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">捐了今年的第一笔钱！</span>
+        <span class="prev-text nav-mobile">Prev</span>
+      </a>
+    
+    
+      <a class="next" href="/2018/11/21/Airflow-离线安装Airflow/">
+        <span class="next-text nav-default">Airflow | 离线安装Airflow</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+        
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+      </footer>
+    
+  </article>
+
+    </div>
+
+      </div>
+
+      <footer id="colophon"><span class="copyright-year">
+    
+        &copy;
+    
+        2012 -
+    
+    2019
+    <span class="footer-author">Lucy.</span>
+    <span class="power-by">
+        Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a> and <a class="theme-link" href="https://github.com/henryhuang/hexo-theme-polarbearsimple">Polar Bear Simple</a>
+    </span>
+</span>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+    
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+
+    <script type="text/javascript" src="/js/src/theme.js?v=1.1"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=1.1"></script>
+
+  </body>
+</html>
